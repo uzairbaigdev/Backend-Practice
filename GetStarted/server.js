@@ -1,28 +1,36 @@
 import express from 'express'
 import 'dotenv/config'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { connectToDatabase } from './config/database.js'
 import userRoutes from './routes/usersRoutes.js'
 import productRoutes from './routes/productRoutes.js'
-import { closeDatabaseConnection, connectToDatabase } from './config/database.js'
 
 const app = express()
-const port = Number(process.env.PORT) || 3000
+const port = process.env.PORT || 3000
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
+app.use(express.json())
 app.use('/users', userRoutes)
 app.use('/products', productRoutes)
+app.use(express.static(path.join(__dirname, 'public')))
 
-const server = await connectToDatabase().then(() => app.listen(port, () => {
-   console.log(`App is listening on port ${port}`)
-})).catch((error)=> {
-   console.error(`error in conecting database`,error);
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
-async function shutdown(signal) {
-   console.log(`${signal} received. Shutting down...`)
-   server.close(async () => {
-      await closeDatabaseConnection()
-      process.exit(0)
-   })
+const startServer = () => {
+  app.listen(port, () => {
+    console.log(`server is running on port ${port}`)
+  })
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'))
-process.on('SIGTERM', () => shutdown('SIGTERM'))
+connectToDatabase()
+  .then(() => {
+    startServer()
+  })
+  .catch((error) => {
+    console.error('Database connection failed. Starting server without MongoDB:', error.message)
+    startServer()
+  })

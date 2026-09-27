@@ -1,8 +1,7 @@
 import { MongoClient } from 'mongodb'
-import { ensureDatabaseSchema } from '../schemas/databaseSchema.js'
 
 const mongoUri = process.env.MONGODB_URI
-const databaseName = process.env.MONGODB_DB_NAME || 'backend'
+const databaseName = process.env.MONGODB_DB_NAME || 'Practice'
 
 if (!mongoUri) {
   throw new Error('MONGODB_URI is not set. Add it to your .env file.')
@@ -12,13 +11,16 @@ const client = new MongoClient(mongoUri)
 let database
 
 export async function connectToDatabase() {
-  await client.connect()
-  database = client.db(databaseName)
-  await database.command({ ping: 1 })
-  await ensureDatabaseSchema(database)
-
-  console.log(`Connected to MongoDB database "${databaseName}"`)
-  return database
+  try {
+    await client.connect()
+    database = client.db(databaseName)
+    await database.command({ ping: 1 })
+    console.log(`Connected to MongoDB database "${databaseName}"`)
+    return database
+  } catch (error) {
+    console.error('MongoDB connection error:', error.message)
+    throw error
+  }
 }
 
 export function getDatabase() {
