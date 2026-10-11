@@ -10,6 +10,14 @@ if (!mongoUri) {
 const client = new MongoClient(mongoUri)
 let database
 
+export class DatabaseUnavailableError extends Error {
+  constructor() {
+    super('Database connection is not initialized')
+    this.name = 'DatabaseUnavailableError'
+    this.code = 'DATABASE_UNAVAILABLE'
+  }
+}
+
 export async function connectToDatabase() {
   try {
     await client.connect()
@@ -25,7 +33,7 @@ export async function connectToDatabase() {
 
 export function getDatabase() {
   if (!database) {
-    throw new Error('Database connection is not initialized')
+    throw new DatabaseUnavailableError()
   }
 
   return database
